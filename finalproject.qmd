@@ -1,17 +1,3 @@
----
-title: "DATASCI 306"
-subtitle: "Final Project"
-format: live-revealjs
-engine: knitr
-r:
-  packages:
-    - tidyverse
-    - gapminder
-  resources:
-    - data/population.RData
----
-
-{{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
 
 
 ```{r}
