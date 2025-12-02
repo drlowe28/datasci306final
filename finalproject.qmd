@@ -1,6 +1,6 @@
 ---
 title: "DATASCI 306"
-subtitle: "Lecture 22"
+subtitle: "Final Project"
 author: "[https://ds306.org/lectures/week14/lecture22.html](https://ds306.org/lectures/week14/lecture22.html)"
 format: live-revealjs
 engine: knitr
@@ -14,203 +14,57 @@ r:
 
 {{< include ./_extensions/r-wasm/live/_knitr.qmd >}}
 
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-#| autorun: true
-library(tidyverse)
-library(modelr)
-library(gapminder)
-theme_set(theme_minimal())
-load("data/population.RData")
-```
 
 ```{r}
 #| echo: false
 #| message: false
 #| warning: false
 library(tidyverse)
-library(gapminder)
-theme_set(theme_minimal())
-load("data/population.RData")
+
+load("data/nflgames.RData")
 ```
-
-# Population growth
-
-![](images/clipboard-3501003222.png){fig-align="center"}
-
-## Overpopulation scare
-
--   In the 1960s and 1970s, there was widespread concern that the world's population was growing too quickly.
--   Books like *The Population Bomb* by Paul Ehrlich warned of mass starvation and societal collapse due to overpopulation.
--   Governments and organizations considered various measures to control population growth, including family planning programs and incentives for smaller families.
-
-## Population growth models
-
--   These dire predictions were based in part on the assumption that human population growth follows an exponential model.
--   Exponential growth occurs when the growth rate of a population is proportional to its current size, leading to rapid increases over time.
--   The mathematical model for exponential growth is given by the equation:
-
-## Modeling population growth
-
--   Say each person has 2 kids.
-
--   Each generation doubles the population:
-
-    $$ P_t = 2 \times  P_{t-1} = 2 \times 2 \times P_{t-2} = \cdots = 2^t \times P_0$$
-
--   More generally, if each person has \$ k \$ kids, then:
-
-    $$ P_t = k \times \cdots \times k \times P_0 = P_0 \times \cdot k^t  = P_0 \times e^{t \log k}$$
-
--   $r = \log k$ is called the growth rate.
-
-## Exponential growth model
-
-$$
-P(t) = P_0 e^{rt}
-$$
-where:
-
--   $P(t)$ is the population at time $t$,
--   $P_0$ is the initial population,
--   $r$ is the growth rate,
--   $e$ is Euler's number (approximately 2.71828).
-
-## Human population data
-
--   Historical estimates of world population have been compiled from various sources, including census data, archaeological findings, and historical records.
--   Modern data is collected by Gapminder and UN.
--   Forecasts also available from UN and other sources.
--   These have been synthesized into a dataset from [OWID dataset](https://ourworldindata.org/grapher/population)
-
-## 
 
 ```{r}
-population
+# negative spread is away team is favored
+
+upsets<- nflgames|>arrange(spread_line)|>dplyr::select(home_team, away_team, home_score, away_score, margin, spread_line)|> filter((spread_line >= 6.5 & margin < 0) | (spread_line <= -6.5 & margin > 0))
+upsets
+
+#504 upsets total
+
+
+all_nfl_games_betting<- nflgames|>filter(!is.na(margin) | is.na(spread_line))
+
+
+head(all_nfl_games_betting)
+
+
+#proportion of upsets
+nrow(upsets)/nrow(all_nfl_games_betting)
+
 ```
-```{r}
-population|>filter(between(Year, 1900, 1970))|>filter(Entity %in% c("Asia", "Africa", "Europe", "North America"))|>
-  ggplot()+geom_line(aes(x = Year, y = Population, color = Entity))
-```
-
-## World populations up to 1970s
-
-```{r}
-# Plot population over time %in% c("Asia", "Africa", "Europe", "North America")
-```
-
-## Log-scaling
-
--   Exponential growth looks linear on a log scale:
-
-  $$
-    \log P(t) = \log P_0 + rt
-  $$
-
--   So if we plot $\log P(t)$ vs $t$ and exponential growth is occuring, we should see a straight line with slope $r$.
-
-## 
 
 ```{r}
-# plot on log scale
-population|>filter(between(Year, 1900, 1970))|>filter(Entity %in% c("Asia", "Africa", "Europe", "North America"))|>
-  ggplot()+geom_line(aes(x = Year, y = Population, color = Entity)) + scale_y_log10()
-```
+money_margin<- seq(14.5, -14.5, by = -0.5)
 
-## Estimating the growth rate using regression
+final_upset<-c()
+for (i in money_margin){
+  upsets_temp<- nflgames|>dplyr::select(home_team, away_team, home_score, away_score, margin, spread_line)|> filter((spread_line >= i & margin < 0) | (spread_line <= -i & margin > 0))
+  prop_upset = nrow(upsets_temp)/nrow(all_nfl_games_betting)
+  final_upset <- c(final_upset, prop_upset)
+}
+df<-data.frame(cutoff = money_margin, upset_prop = final_upset)
 
-```{r}
-# regression estimate of growth rate
-population|>filter(between(Year, 1900, 1970))|>filter(Entity %in% c("Asia", "Africa", "Europe", "North America"))|>
-  lm(log(Population)~Year * Entity, data = _)->mdl
-summary(mdl)
-```
+ggplot()+geom_line(aes(x = cutoff, y = upset_prop), data = df) +geom_vline(xintercept = 6.5, color = "red")
 
-## Population forecasting
-
--   Using the estimated growth rates from the regression, we can forecast future population growth.
--   (What is this assuming?)
-
-## 
-
-```{r}
-# predicted growth
-population|>filter(between(Year, 1900, 1970))|>filter(Entity %in% c("Asia", "Africa", "Europe", "North America"))|>add_predictions(mdl)|>
-  ggplot(aes(x = Population, y = pred))+geom_point(alpha = 0.2) +geom_abline(slope = 1) #model is not working correctly
-#model is predicting the log of the population
-```
-
-## Predictions vs. reality
-
-```{r}
-population|>filter(between(Year, 1900, 2025))|>filter(Entity %in% c("Asia", "Africa", "Europe", "North America"))|>add_predictions(mdl)|> mutate(pred = exp(pred)) -> population_preds
 ```
 ```{r}
-population_preds|>pivot_longer(c(Population, pred))|>ggplot(aes(x = Year, y = value, color = Entity, linetype = name))+geom_line()+geom_vline(xintercept = 1970, color = "black")
+#away teams being upset
+upset_while_away<- upsets|>filter(margin>0)|>count(away_team)|>arrange(n)
+
+upset_while_home<- upsets|>filter(margin<0)|>count(home_team)|>arrange(n)
+
+left_join(upset_while_away, upset_while_home, by =c("away_team" ="home_team"))|>mutate(total_upsets = n.x+n.y)|>arrange(-total_upsets)
+
+
 ```
-
-## Residuals from exponential model
-
-```{r}
-# plot residuals over time
-```
-
-## What caused population slowdown?
-
--   Family planning: Increased access to contraception and family planning services allowed people to have fewer children.
--   Economic development: As countries developed economically, birth rates tended to decline.
--   Education: Higher levels of education
-
-## Fertility rates versus wealth
-
-```{r}
-fertility|>count(Entity)|>filter(str_detect(Entity, "UN"))
-
-fertility|>left_join(gdp)|>ggplot(aes(x = Fertility_Rate, y = GDP))+geom_point()+scale_y_log10()+
-  geom_smooth(method = "lm")
-```
-
-## 
-
-```{r}
-gdp
-```
-
-## 
-
-```{r}
-# plot fertility vs per-capita gdp for various countries
-```
-```{r}
-population|>filter(between(Year, 2000,2020))|>filter(Code == "USA")|>lm(log(Population)~ Year, data = _)|>summary()
-```
-```{r}
-population|>filter(Entity == "World")|>filter(Year == 1970|Year == 2000)|>pluck("Population")
-```
-```{r}
-population|>filter(Year == 1970| Year == 2000)|>group_by(Entity)|>summarize(diff = diff(Population))|>arrange(diff)
-```
-```{r}
-help(diff)
-```
-
-# Interactive data explorer
-
-## Initiating the chat
-
-![](images/clipboard-1975166374.png)
-
-## Ask for help
-
-![](images/clipboard-4228970876.png)
-
-## Clarify design choices
-
-![](images/clipboard-1726289720.png)
-
-## Resulting app
-
-[https://gqg8ee-jonathan-terhorst.shinyapps.io/popgrowth/](https://gqg8ee-jonathan-terhorst.shinyapps.io/popgrowth/)
-
