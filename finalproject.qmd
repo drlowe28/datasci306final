@@ -1,7 +1,6 @@
 ---
 title: "DATASCI 306"
 subtitle: "Final Project"
-author: "[https://ds306.org/lectures/week14/lecture22.html](https://ds306.org/lectures/week14/lecture22.html)"
 format: live-revealjs
 engine: knitr
 r:
@@ -20,8 +19,9 @@ r:
 #| message: false
 #| warning: false
 library(tidyverse)
+library(shiny)
 
-load("data/nflgames.RData")
+load("nflgames.RData")
 ```
 
 ```{r}
