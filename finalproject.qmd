@@ -4,9 +4,6 @@
 ```
 
 ```{r}
-#| echo: false
-#| message: false
-#| warning: false
 library(tidyverse)
 library(shiny)
 library(nflreadr)
@@ -14,6 +11,7 @@ library(nflreadr)
 load("nflgames.RData")
 load("postseasongames.RData")
 load("nflteams.RData")
+load("master_nflschedule.RData")
 ```
 
 ```{r}
@@ -21,52 +19,35 @@ load("nflteams.RData")
 #save(teams, file = "nflteams.RData")
 #postseason_games <- nflreadr::load_schedules(1999:2025) 
 ```
-```{r}
-help(case_when)
-```
-
-
 
 ```{r}
 #updated_postseason<- postseason_games|>filter(game_type!="REG")
 #save(updated_postseason, file = "postseasongames.RData")
 ```
 ```{r}
-teams
-all_info_postseason<- updated_postseason|>mutate(margin = home_score - away_score)|>
+all_info_postseason<- updated_postseason|>
+  mutate(margin = home_score - away_score)|>
   mutate(home_win = case_when(
     margin > 0 ~ 1,
-    .default = 0 
-  ))|>
+    .default = 0 ))|>
   mutate(neutral = ifelse(game_type == "SB", TRUE, FALSE))
-  
-nflgames
-
 ```
 ```{r}
 old_teams <- data.frame(team_abbr = c("SD", "STL", "OAK"), team_name=c("San Diego Chargers", "Saint Louis Rams", "Oakland Raiders"), team_conf= c("AFC", "NFC", "AFC"), team_division = c("AFC West", "NFC West", "AFC West"))
-old_teams
-
-#final_teams<-rbind(teams, old_teams)
-
-
+final_teams<-rbind(teams, old_teams)
 ```
 
 
 ```{r}
-#rbind(nflgames, all_info_postseason)|>left_join(final_teams, by = c("home_team" = "team_abbr"))|>left_join(final_teams, by = c("away_team" = "team_abbr")) -> master_nflschedule
+rbind(nflgames, all_info_postseason)|>left_join(final_teams, by = c("home_team" = "team_abbr"))|>left_join(final_teams, by = c("away_team" = "team_abbr")) -> master_nflschedule
 
-
-
-```
-```{r}
-master_nflschedule|>save(file = "master_nflschedule.RData")
+#master_nflschedule|>save(file = "master_nflschedule.RData")
 ```
 
 
-```{r}
 
-data<- nflgames
+```{r}
+data<- master_nflschedule
 ui<-fluidPage(title = "NFL Upset Predictor", 
               selectInput("team", "NFL Team", c("All",unique(nflgames$home_team))),
               sliderInput("temp", "Temperature", 0, 110, c(0,50)),
