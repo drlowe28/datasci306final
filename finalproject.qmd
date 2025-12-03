@@ -51,17 +51,47 @@ data<- master_nflschedule
 ui<-fluidPage(title = "NFL Upset Predictor", 
               selectInput("team", "NFL Team", c("All",unique(nflgames$home_team))),
               sliderInput("temp", "Temperature", 0, 110, c(0,50)),
-              sliderInput("wind", "Wind Speed", 0, 100, c(0,50)),
+              sliderInput("wind", "Wind Speed", 0, 71, c(0,35)),
               radioButtons("location", "Home vs. Away", c("Home", "Away", "Both")),
-              radioButtons("rival", "Rivalry Games", c("Rivalries, Non-Rivalries", "Both")),
+              radioButtons("rival", "Rivalry Games", c("Rivalries", "Non-Rivalries", "Both")),
               radioButtons("playoff", "Select:", c("Regular Season Games", "Postseason Games", "Both")),
-              selectInput("rest_time", "Rest Time", c("All", "< 1 week", "< 2 weeks", "< 3 weeks"))
-              
+              selectInput("rest_time", "Rest Time", c("All", "7", "14", "21")),
+              plotOutput("p")
         )
 
 
 server<-function(input, output, session){
-  
+  output$p <- renderPlot({
+    if (input$team == "All") {
+      data <- master_nflschedule
+    } else {
+      data <- master_nflschedule |> filter(home_team == input$team | away_team == input$team)
+    }
+    #if (input$location == "Home") {
+    #  data <- data |> filter(home_team == input$team)
+    #} else if (input$location == "Away") {
+    #  data <- data |> filter(away_team == input$team)
+    #} else {
+    #}
+    data <- data |> filter(between(temp, input$temp[1], input$temp[2])) |>
+      filter(between(wind, input$wind[1], input$wind[2]))
+    if(input$rest_time == "7") {
+      data <- data |> filter((home_team == input$team & home_rest <= 7) | 
+                               (away_team == input$team & away_rest <= 7))
+    } else if (input$rest_time == "14") {
+      data <- data |> filter((home_team == input$team & home_rest <= 14) | 
+                               (away_team == input$team & away_rest <= 14))
+    } else if (input$rest_time == "21") {
+      data <- data |> filter((home_team == input$team & home_rest <= 21) | 
+                               (away_team == input$team & away_rest <= 21))
+    } else {
+      data
+    }
+    
+    upsets <- data |> mutate(upset = ((spread_line >= 3.5 & margin < 0) | (spread_line <= -3.5 & margin > 0)))
+    
+    upsets |> ggplot(aes(x = spread_line, fill = upset)) + geom_histogram()
+  })
 }
 
 shinyApp(ui, server)
@@ -115,6 +145,6 @@ left_join(upset_while_away, upset_while_home, by =c("away_team" ="home_team"))|>
 
 ```
 ```{r}
-nflgames
+master_nflschedule
 ```
 
