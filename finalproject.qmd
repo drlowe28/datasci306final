@@ -55,16 +55,15 @@ ui<-fluidPage(title = "NFL Upset Predictor",
               radioButtons("location", "Home vs. Away (Must pick a team)", c("Both", "Home", "Away")),
               radioButtons("rival", "Rivalry Games (Must pick a team)", c("Both", "Rivalries", "Non-Rivalries")),
               radioButtons("playoff", "Select:", c("Both", "Regular Season Games", "Postseason Games")),
-              selectInput("rest_time", "Maxiumum Rest Time (Days) (Must pick a team)", c(7, 14, 21)),
+              selectInput("rest_time", "Maxiumum Rest Time (Days) (Must pick a team)", c(21, 14, 7)),
               plotOutput("p")
         )
 
 
 server<-function(input, output, session){
   filtered_data<-reactive({
-    if (input$team == "All") {
-      data <- master_nflschedule
-    } else {
+    data<- master_nflschedule
+    if (input$team != "All"){
       data <- master_nflschedule |> filter(home_team == input$team | away_team == input$team)
     }
     if(input$playoff == "Regular Season Games") {
@@ -111,8 +110,6 @@ server<-function(input, output, session){
 }
 
 shinyApp(ui, server)
-
-
 ```
 
 
