@@ -61,8 +61,7 @@ ui<-fluidPage(title = "NFL Upset Predictor",
 
 
 server<-function(input, output, session){
-  output$p <- renderPlot({
-    
+  filtered_data<-reactive({
     if (input$team == "All") {
       data <- master_nflschedule
     } else {
@@ -101,9 +100,13 @@ server<-function(input, output, session){
       }
     }
     print(nrow(data))
-    upsets <- data |> mutate(upset = ((spread_line >= 3.5 & margin < 0) | (spread_line <= -3.5 & margin > 0)))
+    data
+    })
+  output$p <- renderPlot({
+    final_data <- filtered_data() 
+    upsets<- final_data|> mutate(upset = ((spread_line >= 3.5 & margin < 0) | (spread_line <= -3.5 & margin > 0)))
     
-    upsets |> ggplot(aes(x = spread_line, fill = upset)) + geom_histogram()
+    upsets|> ggplot(aes(x = spread_line, fill = upset)) + geom_histogram()
   })
 }
 
