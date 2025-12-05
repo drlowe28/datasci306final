@@ -102,8 +102,7 @@ server<-function(input, output, session){
     data
     })
   output$p <- renderPlot({
-    final_data <- filtered_data() 
-    upsets<- final_data|> mutate(upset = ((spread_line >= 3.5 & margin < 0) | (spread_line <= -3.5 & margin > 0)))
+    upsets<- filtered_data()|> mutate(upset = ((spread_line >= 3.5 & margin < 0) | (spread_line <= -3.5 & margin > 0)))
     
     upsets|> ggplot(aes(x = spread_line, fill = upset)) + geom_histogram()
   })
