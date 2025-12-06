@@ -52,13 +52,17 @@ ui<-fluidPage(title = "NFL Upset Predictor",
               sidebarLayout(
                 sidebarPanel(
                   selectInput("team", "NFL Team", c("All",unique(nflgames$home_team))),
+                  conditionalPanel(
+                    "input.team != 'All'",
+                    radioButtons("location", "Home vs. Away", c("Both", "Home", "Away")),
+                    selectInput("rest_time", "Maxiumum Rest Time (Days)", c(21, 14, 7))
+                  ),
               sliderInput("year", "Season", 1999, 2025, c(1999, 2025), sep = ""),
               sliderInput("temp", "Temperature", -10, 110, c(-10,110)),
-              sliderInput("wind", "Wind Speed", 0, 71, c(0,71)),
-              radioButtons("location", "Home vs. Away (Must pick a team)", c("Both", "Home", "Away")),
+              sliderInput("wind", "Wind Speed", 0, 75, c(0,75)),
               radioButtons("rival", "Rivalry Games", c("Both", "Rivalries", "Non-Rivalries")),
               radioButtons("playoff", "Select:", c("Both", "Regular Season Games", "Postseason Games")),
-              selectInput("rest_time", "Maxiumum Rest Time (Days) (Must pick a team)", c(21, 14, 7))
+              
                 ),
               mainPanel(
                 tabsetPanel(
