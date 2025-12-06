@@ -67,7 +67,7 @@ ui<-fluidPage(title = "NFL Upset Predictor",
                            plotOutput("l")
                   ),
                   tabPanel("Regression (Must Pick A Team)",
-                           tableOutput("model")
+                           verbatimTextOutput("model")
                   )
                 )
               )
@@ -147,7 +147,7 @@ server<-function(input, output, session){
     }
     upsetModel <- modeldata |> mutate(upset = as.numeric(((spread_line >= 3.5 & margin < 0) | 
                                             (spread_line <= -3.5 & margin > 0))),
-                                 indoors = (roof == "dome" | roof == "closed"),
+                                 outdoors = (roof != "dome" & roof != "closed"),
                                  home = (home_team == input$team), 
                                  playoff = (game_type != "REG"),
                                  rival = (team_division.x == team_division.y),
@@ -155,24 +155,26 @@ server<-function(input, output, session){
                                    home_team == input$team ~ home_rest,
                                    away_team == input$team ~ away_rest,
                                    .default = NA
-                                 ))
+                                 ),
+                                 temp_outdoor = ifelse(outdoors == 1, temp, 0),
+                                  wind_outdoor = ifelse(outdoors == 1, wind, 0))
+                                 
     upsetModel
   })
-  output$model <- renderTable({
+  output$model <- renderPrint({
     if (input$team == "All") {
       "PICK A TEAM"
     } else {
-    glmModel <- glm(upset ~ temp:!indoors + wind:!indoors + indoors + home + rest_time + rival + 
-          playoff, family = "binomial", data = logmodel()) |> summary()
-    glmcoef <- coef(glmModel)
-    p_values <- glmModel$coefficients[, 4]
-    coefficients
-    p_values
+    glmModel <- glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)|>summary()
+    glmModel
     }
   })
 }
 
 shinyApp(ui, server)
+
+
+
 ```
 
 
@@ -221,19 +223,41 @@ left_join(upset_while_away, upset_while_home, by =c("away_team" ="home_team"))|>
 
 ```
 ```{r}
-upsetModel <- master_nflschedule |> filter (home_team == "PIT" | away_team == "PIT") |> 
+desired_team <-"DET"
+upsetModel <- master_nflschedule |> filter (home_team == desired_team | away_team == desired_team) |> 
   mutate(upset = as.numeric(((spread_line >= 3.5 & margin < 0) | 
                                             (spread_line <= -3.5 & margin > 0))),
-                                 indoors = (roof == "dome" | roof == "closed"),
-                                 home = (home_team == "PIT"),
+                                 outdoors = (roof != "dome" & roof != "closed"),
+                                 home = (home_team == desired_team),
                                  playoff = (game_type != "REG"),
                                  rival = (team_division.x == team_division.y),
                                  rest_time = case_when(
-                                   home_team == "PIT" ~ home_rest,
-                                   away_team == "PIT" ~ away_rest,
+                                   home_team == desired_team ~ home_rest,
+                                   away_team == desired_team ~ away_rest,
                                    .default = NA
-                                 ))
-upsetModel |> glm(upset ~ temp + wind + home + rest_time + rival + 
-          playoff, family = "binomial", data = _) |> summary()
+                                 ),
+                                  temp_outdoor = ifelse(outdoors == 1, temp, 0),  # replace NAs with 0
+                                  wind_outdoor = ifelse(outdoors == 1, wind, 0))
+
+#Then in your GLM:
+glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)|>summary()
+
+
+
+
+```
+
+
+
+
+```{r}
+
+upsetModel |> glm(upset ~ temp + wind + home+ rest_time + rival + 
+          playoff,  family = "binomial", data = _) |> summary()
+```
+
+```{r}
+
+
 ```
 
