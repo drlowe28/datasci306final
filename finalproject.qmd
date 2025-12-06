@@ -158,17 +158,16 @@ server<-function(input, output, session){
                                  ),
                                  temp_outdoor = ifelse(outdoors == 1, temp, 0),
                                   wind_outdoor = ifelse(outdoors == 1, wind, 0))
-                                 
-    upsetModel
-  })
-  output$model <- renderPrint({
     if (input$team == "All") {
       "PICK A TEAM"
     } else {
     glmModel <- glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)|>summary()
     glmModel
-    }
-  })
+    }})
+  
+  output$model <- renderPrint({logmodel()})
+    
+    
 }
 
 shinyApp(ui, server)
