@@ -51,7 +51,7 @@ data<- master_nflschedule
 ui<-fluidPage(title = "NFL Upset Predictor", 
               sidebarLayout(
                 sidebarPanel(
-                  selectInput("team", "NFL Team", c("All",unique(nflgames$home_team))),
+                  selectInput("team", "NFL Team (Select a team for more options)", c("All",unique(nflgames$home_team))),
                   conditionalPanel(
                     "input.team != 'All'",
                     radioButtons("location", "Home vs. Away", c("Both", "Home", "Away")),
