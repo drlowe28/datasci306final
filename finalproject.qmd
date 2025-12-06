@@ -75,17 +75,18 @@ server<-function(input, output, session){
                              (roof == "dome" | roof == "closed")) |>
       filter(between(wind, input$wind[1], input$wind[2]) | 
                (roof == "dome" | roof == "closed"))
+    if (input$rival == "Rivalries") {
+        data <- data |> filter(team_division.x == team_division.y)
+      } else if (input$rival == "Non-Rivalries") {
+        data <- data |> filter(team_division.x != team_division.y)
+      }
     if(input$team != "All") {
       if (input$location == "Home") {
         data <- data |> filter(home_team == input$team)
       } else if (input$location == "Away") {
         data <- data |> filter(away_team == input$team)
       }
-      if (input$rival == "Rivalries") {
-        data <- data |> filter(team_division.x == team_division.y)
-      } else if (input$rival == "Non-Rivalries") {
-        data <- data |> filter(team_division.x != team_division.y)
-      }
+      
       if(input$rest_time == "7") {
         data <- data |> filter((home_team == input$team & home_rest <= 7) | 
                                (away_team == input$team & away_rest <= 7)) 
