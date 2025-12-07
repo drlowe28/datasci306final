@@ -21,6 +21,8 @@ load("master_nflschedule.RData")
 #postseason_games <- nflreadr::load_schedules(1999:2025) 
 ```
 
+
+
 ```{r}
 #updated_postseason<- postseason_games|>filter(game_type!="REG")
 #save(updated_postseason, file = "postseasongames.RData")
@@ -85,19 +87,12 @@ ui<-fluidPage(title = "NFL Upset Predictor",
                            tableOutput("calculator_prob")
                            ),
                   tabPanel("About",
-                           tags$p(
-                             "About:",
-                             tags$a(
-                               href = "https://github.com/drlowe28/datasci306final",
-                               target = "_blank",
-                               "Our GitHub Respository"
+                           a("Visit Our GitHub Repository", 
+                             href = "https://github.com/drlowe28/datasci306final", target ="_blank"))
                                
-                             )
-                           ))
-                )
+                             ))
               )
-          )
-        )
+)
 
 
 server<-function(input, output, session){
