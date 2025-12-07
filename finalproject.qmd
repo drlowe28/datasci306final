@@ -80,8 +80,20 @@ ui<-fluidPage(title = "NFL Upset Predictor",
                            verbatimTextOutput("model"),
                            tableOutput("prob")
                   ),
-                  tabPanel("Upset Calculator (Must Pick A Team)"
-                           )
+                  tabPanel("Upset Calculator (Must Pick A Team)",
+                           verbatimTextOutput("calculator_model"),
+                           tableOutput("calculator_prob")
+                           ),
+                  tabPanel("About",
+                           tags$p(
+                             "About:",
+                             tags$a(
+                               href = "https://github.com/drlowe28/datasci306final",
+                               target = "_blank",
+                               "Our GitHub Respository"
+                               
+                             )
+                           ))
                 )
               )
           )
@@ -160,12 +172,14 @@ server<-function(input, output, session){
            x = "Season",
            y = "Upset Proportion")
   })
-  logmodel <- reactive ({
+  
+  
+  upsetModel<-reactive({
     modeldata <- master_nflschedule
     if (input$team != "All"){
       modeldata <- master_nflschedule |> filter(home_team == input$team | away_team == input$team)
     }
-    upsetModel <- modeldata |> mutate(upset = as.numeric(((spread_line >= 3.5 & margin < 0) | 
+    modeldata <- modeldata |> mutate(upset = as.numeric(((spread_line >= 3.5 & margin < 0) | 
                                             (spread_line <= -3.5 & margin > 0))),
                                  outdoors = (roof != "dome" & roof != "closed"),
                                  home = (home_team == input$team), 
@@ -178,7 +192,11 @@ server<-function(input, output, session){
                                  ),
                                  temp_outdoor = ifelse(outdoors == 1, temp, 0),
                                   wind_outdoor = ifelse(outdoors == 1, wind, 0))
-    glmModel <- glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)
+    modeldata
+    
+  })
+  logmodel <- reactive ({
+    glmModel <- glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel())
     glmModel
     })
   
@@ -195,10 +213,7 @@ server<-function(input, output, session){
                            rest_time = as.numeric(input$rest_time), 
                            temp_outdoor = ifelse(input$outdoors == "Outdoors", max(input$temp), 0),
                            wind_outdoor = ifelse(input$outdoors == "Outdoors", max(input$wind), 0))
-      tmodel <- tmodel |> add_predictions(logmodel()) |> 
-        mutate(exppred = exp(pred)) |> mutate(upsetprob = exppred / (1+exppred)) |>
-        rename("Probability of Being Involved in an Upset" = upsetprob)
-      tmodel |> select(ncol(tmodel))
+      tmodel
     }
     
   })
@@ -211,8 +226,61 @@ server<-function(input, output, session){
     }
   })
   
-  output$prob <- renderTable({textModel()})  
+  output$prob <- renderTable({
+    if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
+       input$location == "Both") {
+      "Must pick parameters other than both for all parameters to receive prediction."
+    }
+    else{
+    prob_output<-textModel() |> 
+      add_predictions(logmodel()) |> 
+        mutate(exppred = exp(pred)) |> 
+      mutate(upsetprob = exppred / (1+exppred)) |>
+        rename("Probability of Being Involved in an Upset" = upsetprob)
+      prob_output|>select(ncol(prob_output))
+      }
+    })  
+  
+  
+  
+  
+  calculator_table<-reactive({
+    calculator_tab<-upsetModel()|>mutate(was_upset = as.numeric((home_team == input$team & margin < 0 & spread_line >= 3.5)|
+                (away_team == input$team & margin > 0 & spread_line <= -3.5)))
+    calculator_tab
+  })
+  
+  
+  calc_logmodel <- reactive ({
+    calc_glmModel <- glm(was_upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = calculator_table())
     
+    calc_glmModel
+    })
+  
+  output$calculator_model<-renderPrint({
+    if (input$team != "All"){
+      summary(calc_logmodel())
+      }
+    else{
+      "PICK A TEAM"
+    }
+      })
+  
+  output$calculator_prob<-renderTable({
+    if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
+       input$location == "Both") {
+      "Must pick parameters other than both for all parameters to receive prediction."
+    }
+    else{
+    calc_prob_output<-textModel() |> 
+      add_predictions(calc_logmodel()) |> 
+        mutate(exppred = exp(pred)) |> 
+      mutate(upsetprob = exppred / (1+exppred)) |>
+        rename("Probability of Being Upset by Another Team" = upsetprob)
+      calc_prob_output|>select(ncol(calc_prob_output))
+      }
+    })
+      
 }
 
 shinyApp(ui, server)
@@ -220,6 +288,27 @@ shinyApp(ui, server)
 
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r}
@@ -294,13 +383,4 @@ glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_
 
 
 
-```{r}
-
-upsetModel |> glm(upset ~ temp + wind + home+ rest_time + rival + 
-          playoff,  family = "binomial", data = _) |> summary()
-```
-
-```{r}
-help(data.frame)
-```
 
