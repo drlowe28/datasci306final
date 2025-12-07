@@ -147,6 +147,8 @@ server<-function(input, output, session){
     data
     })
   output$h <- renderPlot({
+    validate(need(nrow(filtered_data()) > 0, "No data available for the selected filters. Please adjust your criteria.")
+    )
     upsets<- filtered_data() |> 
       mutate(upset = ((spread_line >= 3.5 & margin < 0) | 
                         (spread_line <= -3.5 & margin > 0)))
@@ -159,6 +161,8 @@ server<-function(input, output, session){
       theme(plot.caption = element_text(size = 12))
   })
   output$l <- renderPlot({
+    validate(need(nrow(filtered_data()) > 0, "No data available for the selected filters. Please adjust your criteria.")
+    )
     upsets<- filtered_data() |> 
       mutate(upset = ((spread_line >= 3.5 & margin < 0) | 
                         (spread_line <= -3.5 & margin > 0)))
@@ -279,6 +283,8 @@ server<-function(input, output, session){
     })
   
   output$calculator_histogram <- renderPlot({
+    validate(need(nrow(filtered_data()) > 0, "No data available for the selected filters. Please adjust your criteria.")
+    )
     filtered_data()|>
       mutate(was_upset = (home_team == input$team & margin < 0 & spread_line >= 3.5)|
                 (away_team == input$team & margin > 0 & spread_line <= -3.5))|>
