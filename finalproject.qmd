@@ -142,7 +142,7 @@ server<-function(input, output, session){
                                (away_team == input$team & away_rest <= 21))
       }
     }
-    print(nrow(data))
+    #print(nrow(data))
     data
     })
   output$h <- renderPlot({
