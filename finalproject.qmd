@@ -7,6 +7,7 @@
 library(tidyverse)
 library(shiny)
 library(nflreadr)
+library(modelr)
 
 load("nflgames.RData")
 load("postseasongames.RData")
@@ -51,28 +52,36 @@ data<- master_nflschedule
 ui<-fluidPage(title = "NFL Upset Predictor", 
               sidebarLayout(
                 sidebarPanel(
-                  selectInput("team", "NFL Team (Select a team for more options)", c("All",unique(nflgames$home_team))),
+                  selectInput("team", "NFL Team (Select a team for more options)", 
+                              c("All", sort(unique(nflgames$home_team)))),
                   conditionalPanel(
                     "input.team != 'All'",
                     radioButtons("location", "Home vs. Away", c("Both", "Home", "Away")),
                     selectInput("rest_time", "Maxiumum Rest Time (Days)", c(21, 14, 7))
                   ),
-              sliderInput("year", "Season", 1999, 2025, c(1999, 2025), sep = ""),
-              sliderInput("temp", "Temperature", -10, 110, c(-10,110)),
-              sliderInput("wind", "Wind Speed", 0, 75, c(0,75)),
-              radioButtons("rival", "Rivalry Games", c("Both", "Rivalries", "Non-Rivalries")),
-              radioButtons("playoff", "Select:", c("Both", "Regular Season Games", "Postseason Games")),
-              
+                sliderInput("year", "Season", 1999, 2025, c(1999, 2025), sep = ""),
+                selectInput("outdoors", "Indoors vs. Outdoors", c("Both", "Indoors", "Outdoors")),
+                conditionalPanel(
+                  "input.outdoors != 'Indoors'",
+                  sliderInput("temp", "Temperature", -10, 110, c(-10,110)),
+                  sliderInput("wind", "Wind Speed", 0, 75, c(0,75))
                 ),
+                radioButtons("rival", "Rivalry Games", c("Both", "Rivalries", "Non-Rivalries")),
+                radioButtons("playoff", "Select:", c("Both", "Regular Season Games", "Postseason Games")),
+              
+              ),
               mainPanel(
                 tabsetPanel(
                   tabPanel("Plots", 
                            plotOutput("h"), 
                            plotOutput("l")
                   ),
-                  tabPanel("Regression (Must Pick A Team)",
-                           verbatimTextOutput("model")
-                  )
+                  tabPanel("Upset Regression (Must Pick A Team)",
+                           verbatimTextOutput("model"),
+                           tableOutput("prob")
+                  ),
+                  tabPanel("Upset Calculator (Must Pick A Team)"
+                           )
                 )
               )
           )
@@ -90,11 +99,18 @@ server<-function(input, output, session){
     } else if(input$playoff == "Postseason Games") {
       data <- data |> filter(game_type != "REG")
     }
-    data <- data |> filter(between(season, input$year[1], input$year[2])) |> 
-      filter(between(temp, input$temp[1], input$temp[2]) | 
+    data <- data |> filter(between(season, input$year[1], input$year[2])) 
+    if(input$outdoors == "Indoors") {
+      data <- data |> filter((roof == "dome" | roof == "closed"))
+    } else if(input$outdoors == "Outdoors") {
+      data <- data |> filter(between(temp, input$temp[1], input$temp[2])) |>
+                      filter(between(wind, input$wind[1], input$wind[2]))
+    } else {
+      data <- data |> filter(between(temp, input$temp[1], input$temp[2]) | 
                (roof == "dome" | roof == "closed")) |>
       filter(between(wind, input$wind[1], input$wind[2]) | 
               (roof == "dome" | roof == "closed"))
+    }
     if (input$rival == "Rivalries") {
         data <- data |> filter(team_division.x == team_division.y)
     } else if (input$rival == "Non-Rivalries") {
@@ -162,15 +178,40 @@ server<-function(input, output, session){
                                  ),
                                  temp_outdoor = ifelse(outdoors == 1, temp, 0),
                                   wind_outdoor = ifelse(outdoors == 1, wind, 0))
-    if (input$team == "All") {
-      "PICK A TEAM"
-    } else {
-    glmModel <- glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)|>summary()
+    glmModel <- glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)
     glmModel
-    }})
+    })
   
-  output$model <- renderPrint({logmodel()})
+  textModel <- reactive ({
+    if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
+       input$location == "Both") {
+      "Must pick parameters other than both for all parameters to receive prediction."
+    } else {
+      tmodel <- data.frame(team = input$team, 
+                           outdoors = ifelse(input$outdoors == "Outdoors", T, F), 
+                           home = ifelse(input$location == "Home", T, F), 
+                           playoff = ifelse(input$playoff != "Regular Season Games", T, F),
+                           rival = ifelse(input$rival == "Rivalries", T, F),
+                           rest_time = as.numeric(input$rest_time), 
+                           temp_outdoor = ifelse(input$outdoors == "Outdoors", max(input$temp), 0),
+                           wind_outdoor = ifelse(input$outdoors == "Outdoors", max(input$wind), 0))
+      tmodel <- tmodel |> add_predictions(logmodel()) |> 
+        mutate(exppred = exp(pred)) |> mutate(upsetprob = exppred / (1+exppred)) |>
+        rename("Probability of Being Involved in an Upset" = upsetprob)
+      tmodel |> select(ncol(tmodel))
+    }
     
+  })
+  
+  output$model <- renderPrint({
+    if(input$team != "All") {
+      summary(logmodel())
+    } else {
+      "PICK A TEAM"
+    }
+  })
+  
+  output$prob <- renderTable({textModel()})  
     
 }
 
@@ -260,7 +301,6 @@ upsetModel |> glm(upset ~ temp + wind + home+ rest_time + rival +
 ```
 
 ```{r}
-
-
+help(data.frame)
 ```
 
