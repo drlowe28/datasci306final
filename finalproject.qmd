@@ -84,7 +84,8 @@ ui<-fluidPage(title = "NFL Upset Predictor",
                   ),
                   tabPanel("Upset Calculator (Must Pick A Team)",
                            verbatimTextOutput("calculator_model"),
-                           tableOutput("calculator_prob")
+                           tableOutput("calculator_prob"),
+                           plotOutput("calculator_histogram")
                            ),
                   tabPanel("About",
                            a("Visit Our GitHub Repository", 
@@ -154,7 +155,8 @@ server<-function(input, output, session){
       labs(title = "Upsets based on Spread Line over Selected Parameters",
            x = "Spread Line",
            caption = "(Positive spread means home team is favored)",
-           y = "Count")
+           y = "Count", fill = "Was the Selected Team Involved in an Upset?")+scale_fill_discrete(labels = c("FALSE" = "No", "TRUE" = "Yes"))+
+      theme(plot.caption = element_text(size = 12))
   })
   output$l <- renderPlot({
     upsets<- filtered_data() |> 
@@ -198,7 +200,7 @@ server<-function(input, output, session){
   textModel <- reactive ({
     if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
        input$location == "Both") {
-      "Must pick parameters other than both for all parameters to receive prediction."
+      "Must pick parameters other than \"Both\" for all of the parameters to receive a prediction."
     } else {
       tmodel <- data.frame(team = input$team, 
                            outdoors = ifelse(input$outdoors == "Outdoors", T, F), 
@@ -224,7 +226,7 @@ server<-function(input, output, session){
   output$prob <- renderTable({
     if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
        input$location == "Both") {
-      "Must pick parameters other than both for all parameters to receive prediction."
+      "Must pick parameters other than \"Both\" for all of the parameters to receive a prediction."
     }
     else{
     prob_output<-textModel() |> 
@@ -264,7 +266,7 @@ server<-function(input, output, session){
   output$calculator_prob<-renderTable({
     if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
        input$location == "Both") {
-      "Must pick parameters other than both for all parameters to receive prediction."
+      "Must pick parameters other than \"Both\" for all of the parameters to receive a prediction."
     }
     else{
     calc_prob_output<-textModel() |> 
@@ -275,6 +277,14 @@ server<-function(input, output, session){
       calc_prob_output|>select(ncol(calc_prob_output))
       }
     })
+  
+  output$calculator_histogram <- renderPlot({
+    filtered_data()|>
+      mutate(was_upset = (home_team == input$team & margin < 0 & spread_line >= 3.5)|
+                (away_team == input$team & margin > 0 & spread_line <= -3.5))|>
+      ggplot(aes(x = spread_line, fill = was_upset))+geom_histogram()+labs(
+        x = "Spread Line", y = "Count", caption = "(Positive spread means home team is favored)", title = "Games Where Your Selected Team was Upset by Another Team (Must Pick a Team)", fill = "Was the selected team upset?") + scale_fill_discrete(labels = c("FALSE" = "No", "TRUE" = "Yes")) + theme(plot.caption = element_text(size = 12))
+  })
       
 }
 
