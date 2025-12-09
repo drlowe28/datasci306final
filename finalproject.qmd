@@ -1,9 +1,5 @@
 
 ```{r}
-#install.packages("nflreadr")
-```
-
-```{r}
 library(tidyverse)
 library(shiny)
 library(nflreadr)
