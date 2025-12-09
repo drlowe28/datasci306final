@@ -17,10 +17,24 @@ All data is available on the Github Repository.
 # How to Work the App:
 Use the sliders and various selection tools on the sidebar in the app to filter the data provided by nflreadr for your selected conditions. All plots are reactive and display the filtered data.
 # How to Run the App (Local):
-
+ - Download prep.R and shinyapp.R as well as the data folder
+ - shinyapp.R is the actual app, while prep.R is the code that was used to create postseasongames.RData, nflteams.RData, and master_nflschedule.RData (using nflgames.RData)
+ - All of these data files are saved to the data folder already, so running prep.R before shinyapp.R is not necessary for the app to function
+ - In RStudio, open the shinyapp.R file and click 'Run App'
 # Limitations
  - Some teams joined and some franchises moved later than 1999, so some data may be missing for these respective teams\
  - Our prediction table uses the maximum wind speed and temperature selected using the sliders on the sidebar. Because there is not prevalent data involving high temperatures and high wind speeds, this could result in inaccurate predictions.
+# File Layout:
+/
+├── shinyapp.R                # Shiny app\
+├── prep.R          # Data creation script\
+├── data/\
+│   └── master_nflschedule.RData\
+│   └── nflgames.RData\
+│   └── nflteams.RData\
+│   └── postseasongames.RData\
+├── README.md\
+└── finalproject.qmd
 # Main contributors: 
 Duncan Lowe and George Kobrossy\
 App made with R Shiny
