@@ -16,6 +16,8 @@ All data is available on the Github Repository.
  - These models are also used to predict the chances of a future upset (See limitations for potential errors)
 # How to Work the App:
 Use the sliders and various selection tools on the sidebar in the app to filter the data provided by nflreadr for your selected conditions. All plots are reactive and display the filtered data.
+# How to Run the App (Local):
+
 # Limitations
  - Some teams joined and some franchises moved later than 1999, so some data may be missing for these respective teams\
  - Our prediction table uses the maximum wind speed and temperature selected using the sliders on the sidebar. Because there is not prevalent data involving high temperatures and high wind speeds, this could result in inaccurate predictions.
