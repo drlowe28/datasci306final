@@ -7,5 +7,5 @@ All data is available on the Github Repository.
 # How to Work the App:
 Use the sliders and various selection tools on the sidebar in the app to filter the data provided by nflreadr for your selected conditions. All plots are reactive and display the filtered data. As stated in the project
 # Main contributors: 
-Duncan Lowe and George Kobrossy
-# App made with R Shiny
+Duncan Lowe and George Kobrossy\
+App made with R Shiny
