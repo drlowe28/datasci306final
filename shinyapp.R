@@ -50,6 +50,7 @@ ui<-fluidPage(title = "NFL Upset Predictor",
                     tabPanel("About",
                              a("Visit Our GitHub Repository and README File", 
                                href = "https://github.com/drlowe28/datasci306final", target ="_blank"),
+                             textOutput("diff_regression"),
                              tableOutput("div_table")
                     )
                   )
@@ -268,7 +269,13 @@ server<-function(input, output, session){
     master_nflschedule |> distinct(home_team, team_division.x) |> 
       rename("Team" = home_team, "Division" = team_division.x) |>
       arrange(Division, Team)
+    
   })   
+  
+  output$diff_regression <- renderText({
+    "This app uses 2 different models. The first model, in the \"Upset Regression\" tab predicts the probability of the selected team being involved in an upset (Either upsetting another team or being upset by another team).\n
+    The second model, in the \"Upset Calculator\" tab predicts the probability of the selected team being upset by another team. \n"
+  })
 }
 
 shinyApp(ui, server)
