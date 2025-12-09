@@ -12,7 +12,7 @@ All data is available on the Github Repository.
     - Criteria involving empty data is handled with validate(need())
     - Filters are reactive to every change and are handled through reactive({})
  - Displays visuals of upsets against the spread, and upset proportion over the years (An upset is when a team is favored by at least 3.5 points in the spread line and does not win that game)
- - Two logistic regression models are run for the probability of being involved in an upset (team either upsets someone or is upset by someone else), as well as being upset by another team. These regression models only work when a team is selected
+ - Two logistic regression models are run. The first model runs a regression for the probability of being involved in an upset (team either upsets someone or is upset by someone else), and the second model runs a regression for the probability of being upset by another team. The first model can be found in the 'Upset Regression' tab, and the second model can be found in the 'Upset Calculator' tab. These regression models only work when a team is selected
  - These models are also used to predict the chances of a future upset (See limitations for potential errors)
 # How to Work the App:
 Use the sliders and various selection tools on the sidebar in the app to filter the data provided by nflreadr for your selected conditions. All plots are reactive and display the filtered data.
