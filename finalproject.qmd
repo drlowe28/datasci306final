@@ -9,10 +9,10 @@ library(shiny)
 library(nflreadr)
 library(modelr)
 
-load("nflgames.RData")
-load("postseasongames.RData")
-load("nflteams.RData")
-load("master_nflschedule.RData")
+load("data/nflgames.RData")
+load("data/postseasongames.RData")
+load("data/nflteams.RData")
+load("data/master_nflschedule.RData")
 ```
 
 ```{r}
