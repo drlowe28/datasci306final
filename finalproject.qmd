@@ -224,7 +224,7 @@ server<-function(input, output, session){
     
   })
   
-  disclaimer <- "Temp and Wind calculators are based on the maxiumum value of wind speed and temperature selected in the sliders. There is not as prevalent of data for high wind speeds and temperatures, which could result in inaccurate predictions."
+  disclaimer <- "Temperature and Wind predictors used to calculate the probability of an upset are the maxiumum value of \"Wind Speed\" and \"Temperature\" selected in the sliders. The data for high wind speeds and temperatures is not as prevalent, which could result in inaccurate predictions at these values."
   
   output$disclaimer <- renderText ({
     disclaimer
@@ -316,102 +316,4 @@ server<-function(input, output, session){
 
 shinyApp(ui, server)
 
-
-
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-# negative spread is away team is favored
-
-upsets<- nflgames|>arrange(spread_line)|>dplyr::select(home_team, away_team, home_score, away_score, margin, spread_line)|> filter((spread_line >= 6.5 & margin < 0) | (spread_line <= -6.5 & margin > 0))
-upsets
-
-#504 upsets total
-
-
-all_nfl_games_betting<- nflgames|>filter(!is.na(margin) | is.na(spread_line))
-
-
-head(all_nfl_games_betting)
-
-
-#proportion of upsets
-nrow(upsets)/nrow(all_nfl_games_betting)
-
-```
-
-```{r}
-money_margin<- seq(14.5, -14.5, by = -0.5)
-
-final_upset<-c()
-for (i in money_margin){
-  upsets_temp<- nflgames|>dplyr::select(home_team, away_team, home_score, away_score, margin, spread_line)|> filter((spread_line >= i & margin < 0) | (spread_line <= -i & margin > 0))
-  prop_upset = nrow(upsets_temp)/nrow(all_nfl_games_betting)
-  final_upset <- c(final_upset, prop_upset)
-}
-df<-data.frame(cutoff = money_margin, upset_prop = final_upset)
-
-ggplot()+geom_line(aes(x = cutoff, y = upset_prop), data = df) +geom_vline(xintercept = 6.5, color = "red")
-
-```
-```{r}
-#away teams being upset
-upset_while_away<- upsets|>filter(margin>0)|>count(away_team)|>arrange(n)
-
-upset_while_home<- upsets|>filter(margin<0)|>count(home_team)|>arrange(n)
-
-left_join(upset_while_away, upset_while_home, by =c("away_team" ="home_team"))|>mutate(total_upsets = n.x+n.y)|>arrange(-total_upsets)
-
-
-```
-```{r}
-desired_team <-"DET"
-upsetModel <- master_nflschedule |> filter (home_team == desired_team | away_team == desired_team) |> 
-  mutate(upset = as.numeric(((spread_line >= 3.5 & margin < 0) | 
-                                            (spread_line <= -3.5 & margin > 0))),
-                                 outdoors = (roof != "dome" & roof != "closed"),
-                                 home = (home_team == desired_team),
-                                 playoff = (game_type != "REG"),
-                                 rival = (team_division.x == team_division.y),
-                                 rest_time = case_when(
-                                   home_team == desired_team ~ home_rest,
-                                   away_team == desired_team ~ away_rest,
-                                   .default = NA
-                                 ),
-                                  temp_outdoor = ifelse(outdoors == 1, temp, 0),  # replace NAs with 0
-                                  wind_outdoor = ifelse(outdoors == 1, wind, 0))
-
-#Then in your GLM:
-glm(upset ~ outdoors + home + playoff + rival + rest_time + temp_outdoor + wind_outdoor,family = "binomial",data = upsetModel)|>summary()
-
-
-
-
-```
-
-
-
-
-
