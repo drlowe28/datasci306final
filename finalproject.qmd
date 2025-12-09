@@ -52,6 +52,7 @@ rbind(nflgames, all_info_postseason)|>left_join(final_teams, by = c("home_team" 
 ```{r}
 data<- master_nflschedule
 ui<-fluidPage(title = "NFL Upset Predictor", 
+              titlePanel("NFL Upset Predictor"),
               sidebarLayout(
                 sidebarPanel(
                   selectInput("team", "NFL Team (Select a team for more options)", 
@@ -61,39 +62,43 @@ ui<-fluidPage(title = "NFL Upset Predictor",
                     radioButtons("location", "Home vs. Away", c("Both", "Home", "Away")),
                     selectInput("rest_time", "Maxiumum Rest Time (Days)", c(21, 14, 7))
                   ),
-                sliderInput("year", "Season", 1999, 2025, c(1999, 2025), sep = ""),
-                selectInput("outdoors", "Indoors vs. Outdoors", c("Both", "Indoors", "Outdoors")),
-                conditionalPanel(
-                  "input.outdoors != 'Indoors'",
-                  sliderInput("temp", "Temperature", -10, 110, c(-10,110)),
-                  sliderInput("wind", "Wind Speed", 0, 75, c(0,75))
-                ),
-                radioButtons("rival", "Rivalry Games", c("Both", "Rivalries", "Non-Rivalries")),
-                radioButtons("playoff", "Select:", c("Both", "Regular Season Games", "Postseason Games")),
+                  sliderInput("year", "Season", 1999, 2025, c(1999, 2025), sep = ""),
+                  selectInput("outdoors", "Indoors vs. Outdoors", c("Both", "Indoors", "Outdoors")),
+                  conditionalPanel(
+                    "input.outdoors != 'Indoors'",
+                    sliderInput("temp", "Temperature", -10, 110, c(-10,110)),
+                    sliderInput("wind", "Wind Speed", 0, 75, c(0,75))
+                  ),
+                  radioButtons("rival", "Rivalry Games", c("Both", "Rivalries", "Non-Rivalries")),
+                  radioButtons("playoff", "Select:", c("Both", "Regular Season Games", "Postseason Games")),
               
-              ),
-              mainPanel(
-                tabsetPanel(
-                  tabPanel("Plots", 
+                ),
+                mainPanel(
+                  tabsetPanel(
+                    tabPanel("Plots", 
                            plotOutput("h"), 
                            plotOutput("l")
-                  ),
-                  tabPanel("Upset Regression (Must Pick A Team)",
+                           ),
+                    tabPanel("Upset Regression (Must Pick A Team)",
                            verbatimTextOutput("model"),
-                           tableOutput("prob")
-                  ),
-                  tabPanel("Upset Calculator (Must Pick A Team)",
+                           tableOutput("prob"),
+                           textOutput("disclaimer")
+                           ),
+                    tabPanel("Upset Calculator (Must Pick A Team)",
                            verbatimTextOutput("calculator_model"),
                            tableOutput("calculator_prob"),
+                           textOutput("calc_disclaimer"),
                            plotOutput("calculator_histogram")
                            ),
-                  tabPanel("About",
-                           a("Visit Our GitHub Repository", 
-                             href = "https://github.com/drlowe28/datasci306final", target ="_blank"))
-                               
-                             ))
+                    tabPanel("About",
+                           a("Visit Our GitHub Repository and README File", 
+                             href = "https://github.com/drlowe28/datasci306final", target ="_blank"),
+                           tableOutput("div_table")
+                           )
+                    )
+                  )
+                )
               )
-)
 
 
 server<-function(input, output, session){
@@ -219,6 +224,12 @@ server<-function(input, output, session){
     
   })
   
+  disclaimer <- "Temp and Wind calculators are based on the maxiumum value of wind speed and temperature selected in the sliders. There is not as prevalent of data for high wind speeds and temperatures, which could result in inaccurate predictions."
+  
+  output$disclaimer <- renderText ({
+    disclaimer
+  })
+  
   output$model <- renderPrint({
     if(input$team != "All") {
       summary(logmodel())
@@ -267,6 +278,10 @@ server<-function(input, output, session){
     }
       })
   
+  output$calc_disclaimer <- renderText ({
+    disclaimer
+  })
+  
   output$calculator_prob<-renderTable({
     if(input$team == "All" | input$outdoors == "Both" | input$rival == "Both" | input$playoff == "Both" | 
        input$location == "Both") {
@@ -291,7 +306,12 @@ server<-function(input, output, session){
       ggplot(aes(x = spread_line, fill = was_upset))+geom_histogram()+labs(
         x = "Spread Line", y = "Count", caption = "(Positive spread means home team is favored)", title = "Games Where Your Selected Team was Upset by Another Team (Must Pick a Team)", fill = "Was the selected team upset?") + scale_fill_discrete(labels = c("FALSE" = "No", "TRUE" = "Yes")) + theme(plot.caption = element_text(size = 12))
   })
-      
+   
+  output$div_table <- renderTable({
+    master_nflschedule |> distinct(home_team, team_division.x) |> 
+      rename("Team" = home_team, "Division" = team_division.x) |>
+      arrange(Division, Team)
+  })   
 }
 
 shinyApp(ui, server)
