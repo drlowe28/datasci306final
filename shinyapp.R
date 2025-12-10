@@ -273,7 +273,7 @@ server<-function(input, output, session){
   })   
   
   output$diff_regression <- renderText({
-    "This app uses 2 different models. The first model, in the \"Upset Regression\" tab predicts the probability of the selected team being involved in an upset (Either upsetting another team or being upset by another team).\n
+    "This app uses 2 different logistic regression models. The first model, in the \"Upset Regression\" tab predicts the probability of the selected team being involved in an upset (Either upsetting another team or being upset by another team).\n
     The second model, in the \"Upset Calculator\" tab predicts the probability of the selected team being upset by another team. \n"
   })
 }
