@@ -5,7 +5,7 @@ account: 4nta9v-duncan-lowe
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 16279639
-bundleId: 11298998
+bundleId: 11303616
 url: https://4nta9v-duncan-lowe.shinyapps.io/nflupsetpredictor/
 version: 1
 asMultiple: FALSE
