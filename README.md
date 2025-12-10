@@ -22,7 +22,7 @@ Use the sliders and various selection tools on the sidebar in the app to filter 
  - All of these data files are saved to the data folder already, so running prep.R before shinyapp.R is not necessary for the app to function
  - In RStudio, open the shinyapp.R file and click 'Run App'
 # Limitations
- - Some teams joined and some franchises moved later than 1999, so some data may be missing for these respective teams\
+ - Some teams joined and some franchises moved later than 1999, so some data may be missing for these respective teams
  - Our prediction table uses the maximum wind speed and temperature selected using the sliders on the sidebar. Because there is not prevalent data involving high temperatures and high wind speeds, this could result in inaccurate predictions.
 # File Layout:
 /
